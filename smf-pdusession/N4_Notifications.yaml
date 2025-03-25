@@ -1,0 +1,109 @@
+openapi: 3.0.0
+
+info:
+  title: N4 Notifications
+  description: This API describe the interactions between SMF-N4 and SMF-Pdusession
+  version: 1.0.0
+
+servers:
+  - url: '{apiRoot}/nsmf-pdusession/v1'
+    variables:
+      apiRoot:
+        default: https://example.com
+        description:  apiRoot as defined in subclause 4.4 of 3GPP TS 29.501.
+
+paths:
+  /sessions/{seid}/notify-incoming-data/{qfi}:
+      post:
+        summary: UPF notifies SMF-Pdusession (via SMF-N4) that data is waiting to be delivered (Paging)
+        tags:
+          - PAGING
+        operationId: notifyIncomingData
+        parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: '#/components/schemas/Seid'
+          required: true
+          description: SEID
+        - in: path
+          name: qfi
+          schema:
+            $ref: '../ts/TS29571_CommonData.yaml#/components/schemas/Qfi'
+          required: true
+          description: QFI
+        responses:
+          '204':
+            description: Notification Ack
+          '400':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/400'
+          '404':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/404'
+          '409':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/409'
+          '500':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/500'
+          '504':
+            description: Gateway Timeout
+            content:
+              application/problem+json:
+                schema:
+                  $ref: '../ts/TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
+  /topology/notify-upf-down:
+      post:
+        summary: Notification receive when Upf is down
+        tags:
+          - UPF Down
+        operationId: notifyUpfDown
+        requestBody:
+          description: parameters used to notify upf is down
+          required: true
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/N4TopologyUpf'
+        responses:
+          '204':
+            description: Notification upf down receive 
+          '400':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/400'
+          '404':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/404'
+          '409':
+            $ref: '../ts/TS29571_CommonData.yaml#/components/responses/409'
+          '500':
+            description: internal error
+            content:
+              application/problem+json:
+                schema:
+                  $ref: '../ts/TS29571_CommonData.yaml#/components/schemas/ProblemDetails'
+components:
+  schemas:
+    Seid:
+      type: integer
+      minimum: 0
+      format: int64
+    N4TopologyUpf:
+      type: object
+      properties:
+        n4Ip:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        n3Ip:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        status:
+          $ref: "#/components/schemas/UpfStatus"
+        gNBs:
+          type: array
+          items:
+            type: integer
+        nwi:
+          type: array
+          items:
+            type: string
+      required:
+        - n4Ip
+        - gNBs
+        - nwi
+    UpfStatus:
+      type: string
+      enum: [UNKOWN, UP, DOWN]

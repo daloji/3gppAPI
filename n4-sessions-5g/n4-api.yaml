@@ -1,0 +1,675 @@
+openapi: 3.0.0
+info:
+  title: N4-Session 5GC API
+  description: This API describe the interactions between SMF-PDU-Session and the SMF-N4-Session for the 5G callfows
+  version: 1.0.2
+servers:
+  - url: "{apiRoot}/nsmf-n4/v1"
+    variables:
+      apiRoot:
+        default: https://example.com
+        description: apiRoot as defined in subclause 4.4 of 3GPP TS 29.501. The sm-contexts and pdu-sessions resources can be distributed on different processing instances or hosts. Thus the authority and/or deployment-specific string of the apiRoot of the created individual sm context and pdu-session resources' URIs may differ from the authority and/or deployment-specific string of the apiRoot of the sm-contexts and pdu-sessions collections' URIs.
+paths:
+  /sessions/establish:
+    post:
+      summary: Establish N4-Session. The operation includes sending a request to upf to allocate a new session with the corresponding tunnel information
+      tags:
+        - N4 Sessions
+      operationId: EstablishN4Session
+      requestBody:
+        $ref: "#/components/requestBodies/EstablishN4SessionRequest"
+        required: true
+      responses:
+        "201":
+          $ref: "#/components/responses/EstablishN4SessionResponse"
+          headers:
+            Location:
+              description: "Contains the URI of the newly created resource, according to the structure: {apiRoot}/nnrf-nfm/v1/nf-instances/{nfInstanceId}"
+              required: true
+              schema:
+                type: string
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions:
+    get:
+      # same as TS29510_Nnrf_NFManagement.yaml#/paths/nf-instances/get
+      summary: Retrieve a collection of sessions
+      tags:
+        - N4 Sessions
+      operationId: GetSessions
+      responses:
+        "200":
+          description: "Expected response to a valid request"
+          content:
+            application/3gppHal+json:
+              schema:
+                type: object
+                properties:
+                  _links:
+                    type: object
+                    description: "List of the URI of NF instances. It has two members whose names are item and self. The item one contains an array of URIs."
+                    additionalProperties:
+                      $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/LinksValueSchema"
+                minProperties: 1
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "403":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/403"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "411":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/411"
+        "413":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/413"
+        "415":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/415"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+        "501":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/501"
+        "503":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/503"
+        default:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/default"
+  /sessions/{seid}/ran-tunnel-infos:
+    post:
+      summary: Set downlink tunnel information
+      tags:
+        - UE Attach/Detach
+      operationId: SetRanTunnelInfo
+      requestBody:
+        $ref: "#/components/requestBodies/SetRanTunnelInfoRequest"
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      responses:
+        "204":
+          description: "Set ran tunnel information successfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions/{seid}/tunnel-infos:
+    delete:
+      summary: Set Session in IDLE mode
+      description: "This RPC deletes both upf and gNB ran tunnel information"
+      tags:
+        - Idle
+      operationId: DeleteTunnelInfos
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      responses:
+        "204":
+          description: "Tunnel information deleted succesfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions/{seid}/upf-tunnel-info:
+    post:
+      summary: Generate a new TEID on upf endpoint
+      description: "This RPC Creates the tunnel on the upf side"
+      tags:
+        - Idle
+      operationId: CreateCNTunnelInfo
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      responses:
+        "201":
+          $ref: "#/components/responses/CreateCNTunnelInfoResponse"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions/{seid}/activate-tunnel:
+    post:
+      summary: Enable Traffic by re-setting ran tunnel information
+      description: "This RPC deletes both upf and gNB ran tunnel information"
+      tags:
+        - Idle
+      operationId: activateTunnel
+      requestBody:
+        $ref: "#/components/requestBodies/ActivateTunnelRequest"
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      responses:
+        "200":
+          description: "Set ran tunnel information succesfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions/{seid}:
+    delete:
+      summary: Delete an existing session
+      tags:
+        - N4 Sessions
+      operationId: DeleteSession
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      responses:
+        "204":
+          description: "Session deleted succesfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+    get:
+      summary: Retrieve an existing session
+      tags:
+        - N4 Sessions
+      operationId: GetSession
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      responses:
+        "200":
+          $ref: "#/components/responses/GetSessionResponse"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+    patch:
+      summary: Update an existing session
+      tags:
+        - N4 Sessions
+      operationId: UpdateSession
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/N4SessionUpdateInfo"
+        required: true
+      responses:
+        "204":
+          description: "Session modified successfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions/upf/{upfId}:
+    get:
+      summary: Retrieve upf sessions
+      tags:
+        - N4 Sessions
+      operationId: GetUpfSessions
+      parameters:
+        - in: path
+          name: upfId
+          schema:
+            type: string
+          required: true
+          description: upfId
+      responses:
+        "200":
+          description: "Retrieve sessions within upf"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/N4Session"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /topology:
+    post:
+      summary: Create Topology
+      tags:
+        - Topology
+      operationId: CreateTopology
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Topology"
+        required: true
+      responses:
+        "201":
+          description: "Topology created successfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+    get:
+      summary: Retrieve Topology
+      tags:
+        - Topology
+      operationId: GetTopology
+      responses:
+        "200":
+          description: "Get topology successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topology"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+        default:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/default"
+  /topology/{upfid}/upfStatus:
+    put:
+      parameters:
+        - in: path
+          name: upfid
+          schema:
+            type: string
+          required: true
+          description: upfid
+      summary: Change upf status
+      tags:
+        - Topology
+      operationId: setUpfStatus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: "#/components/schemas/UpfStatus"
+        required: true
+      responses:
+        "201":
+          description: "Upf modified successfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /topology/{upfid}/n3Ip:
+    put:
+      parameters:
+        - in: path
+          name: upfid
+          schema:
+            type: string
+          required: true
+          description: upfid
+      summary: Set upf N3Ip
+      tags:
+        - Topology
+      operationId: setUpfn3Ip
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                n3Ip:
+                  $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        required: true
+      responses:
+        "201":
+          description: "Upf modified successfully"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+  /sessions/{seid}/xn-handover:
+    post:
+      summary: switch the downlink N3 tunnel of the PDU session towards a new GTP tunnel
+      description: "Switch new GTP tunnel between upf and  target gnodeB"
+      tags:
+        - Handover
+      operationId: pathSwitchRequest
+      parameters:
+        - in: path
+          name: seid
+          schema:
+            $ref: "#/components/schemas/Seid"
+          required: true
+          description: Session ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/XnHandoverInfo"
+      responses:
+        "200":
+          description: "Handover path switched successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "../ts/TS29502_Nsmf_PDUSession.yaml#/components/schemas/TunnelInfo"
+        "400":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/400"
+        "404":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/404"
+        "500":
+          $ref: "../ts/TS29571_CommonData.yaml#/components/responses/500"
+components:
+  schemas:
+    N4Session:
+      type: object
+      properties:
+        seid:
+          $ref: "#/components/schemas/Seid"
+        dnn:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Dnn"
+        pduSessionType:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/PduSessionType"
+        ueIpv4Address:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        dnsInfos:
+          $ref: "#/components/schemas/DnsInfos"
+        gNbId:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/GNbId"
+        upfN4Info:
+          $ref: "#/components/schemas/UpfN4Info"
+        defaultQos:
+          $ref: "#/components/schemas/DefaultQos"
+        qosFlowList:
+          type: array
+          items:
+            $ref: "#/components/schemas/QosFlow"
+        ranTunnelInfo:
+          $ref: "#/components/schemas/QosFlowTunnel"
+        upfTunnelInfo:
+          $ref: "#/components/schemas/QosFlowTunnel"
+        status:
+          $ref: "#/components/schemas/N4SessionStatus"
+        FramedRouteList:
+          type: array
+          items:
+            $ref: '../ts/TS29503_Nudm_SDM.yaml#/components/schemas/FrameRouteInfo'
+        nwi:
+          type: string
+      required:
+        - seid
+        - dnn
+        - pduSessionType
+        - ueIpv4Address
+        - dnsInfos
+        - gNbId
+        - upfN4Info
+        - defaultQos
+        - status
+        - nwi
+    N4SessionUpdateInfo:
+      type: object
+      properties:
+        qosFlowInfoList:
+          type: array
+          items:
+            $ref: "#/components/schemas/QosFlowInfo"
+      required:
+        - qosFlowInfoList
+    DnsInfos:
+      type: object
+      properties:
+        ipv4Primary:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        ipv4Secondary:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+      required:
+        - ipv4Primary
+        - ipv4Secondary
+    N4SessionStatus:
+      type: string
+      enum: [ACTIVE, IDLE, DOWN]
+    DefaultQos:
+      type: object
+      properties:
+        qfi:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Qfi"
+        5qi:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/5Qi"
+        ambr:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ambr"
+      required:
+        - qfi
+        - 5qi
+        - ambr
+    QosFlow:
+      type: object
+      properties:
+        qfi:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Qfi"
+        qosDecs:
+          $ref: "../ts/TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/QosData"
+        flowInformation:
+          $ref: "../ts/TS29512_Npcf_SMPolicyControl.yaml#/components/schemas/FlowInformation"
+        precedence:
+          type: integer
+      required:
+        - qfi
+        - flowInformation
+        - qosDecs
+        - precedence
+    QosFlowInfo:
+      type: object
+      properties:
+        qosFlow:
+          $ref: "#/components/schemas/QosFlow"
+        status:
+          $ref: "#/components/schemas/QosFlowInfoStatus"
+      required:
+        - qosFlow
+        - status
+    QosFlowInfoStatus:
+      type: string
+      enum: [CREATE, UPDATE, DELETE]
+    UpfN4Info:
+      type: object
+      properties:
+        ipv4Addr:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        location:
+          type: string
+          example: "Rennes"
+      required:
+        - ipv4Addr
+        - location
+    QosFlowTunnel:
+      description: "Tunnel information per QoS flow"
+      type: object
+      properties:
+        tunnelInfo:
+          $ref: "../ts/TS29502_Nsmf_PDUSession.yaml#/components/schemas/TunnelInfo"
+        qfiList:
+          type: array
+          items:
+            $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Qfi"
+          minItems: 1
+      required:
+        - tunnelInfo
+    Seid:
+      type: integer
+      format: int64
+    N4SessionEstablishInfo:
+      type: object
+      properties:
+        seid:
+          $ref: "#/components/schemas/Seid"
+        dnn:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Dnn"
+        pduSessionType:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/PduSessionType"
+        ueIpv4Address:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        dnsInfos:
+          $ref: "#/components/schemas/DnsInfos"
+        gNbId:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/GNbId"
+        defaultQos:
+          $ref: "#/components/schemas/DefaultQos"
+        qosFlowList:
+          type: array
+          items:
+            $ref: "#/components/schemas/QosFlow"
+        ipv4FrameRouteList:
+          type: array
+          items:
+            $ref: '../ts/TS29503_Nudm_SDM.yaml#/components/schemas/FrameRouteInfo'
+        ipv6FrameRouteList:
+          type: array
+          items:
+            $ref: '../ts/TS29503_Nudm_SDM.yaml#/components/schemas/FrameRouteInfo'
+          minItems: 1
+
+      required:
+        - dnn
+        - pduSessionType
+        - ueIpv4Address
+        - dnsInfos
+        - gNbId
+        - defaultQos
+        - seid
+    N4SessionEstablishResponseInfo:
+      type: object
+      properties:
+        seid:
+          $ref: "#/components/schemas/Seid"
+        upfTunnelInfo:
+          $ref: "#/components/schemas/QosFlowTunnel"
+      required:
+        - seid
+        - upfTunnelInfo
+    Topology:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/N4TopologyUpf"
+    N4TopologyUpf:
+      type: object
+      properties:
+        n4Ip:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        n3Ip:
+          $ref: "../ts/TS29571_CommonData.yaml#/components/schemas/Ipv4Addr"
+        status:
+          $ref: "#/components/schemas/UpfStatus"
+        gNBs:
+          type: array
+          items:
+            type: integer
+        nwi:
+          type: array
+          items:
+            type: string
+      required:
+        - n4Ip
+        - gNBs
+        - nwi
+    XnHandoverInfo:
+      type: object
+      properties:
+        gnodeBid:
+          type: "string"
+          description: "Target gnodeB Id"
+        tunnelInfo:
+          $ref: "../ts/TS29502_Nsmf_PDUSession.yaml#/components/schemas/TunnelInfo"
+        qosFlowInfoList:
+          type: array
+          items:
+            $ref: "#/components/schemas/QosFlowInfo"
+      required:
+        - gnodeBid
+        - tunnelInfo
+    UpfStatus:
+      type: string
+      enum: [UNKOWN, UP, DOWN]
+  requestBodies:
+    SetRanTunnelInfoRequest:
+      description: "Set tunnel information payload"
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../ts/TS29502_Nsmf_PDUSession.yaml#/components/schemas/TunnelInfo"
+    ActivateTunnelRequest:
+      description: "Set tunnel information payload"
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../ts/TS29502_Nsmf_PDUSession.yaml#/components/schemas/TunnelInfo"
+    EstablishN4SessionRequest:
+      description: "Set session establishment information"
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/N4SessionEstablishInfo"
+  responses:
+    CreateCNTunnelInfoResponse:
+      description: "Response with new upf tunnel information"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/QosFlowTunnel"
+    GetSessionResponse:
+      description: "Get session response"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/N4Session"
+    EstablishN4SessionResponse:
+      description: "Response with established session information"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/N4SessionEstablishResponseInfo"
